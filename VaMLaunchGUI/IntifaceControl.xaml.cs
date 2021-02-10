@@ -4,14 +4,9 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
-using Buttplug.Client;
-using Buttplug.Core.Logging;
-using Buttplug.Core.Messages;
-using Buttplug.Server;
-using NLog;
+using Buttplug;
 
 namespace VaMLaunchGUI
 {
@@ -41,133 +36,225 @@ namespace VaMLaunchGUI
         public ObservableCollection<CheckedListItem> DevicesList { get; set; } = new ObservableCollection<CheckedListItem>();
 
         private ButtplugClient _client;
-        private DeviceManager _deviceManager;
         private List<ButtplugClientDevice> _devices = new List<ButtplugClientDevice>();
         private Task _connectTask;
         private bool _quitting;
-        private Logger _log;
 
         public EventHandler ConnectedHandler;
         public EventHandler DisconnectedHandler;
         public EventHandler<string> LogMessageHandler;
-        public bool IsConnected => _client.Connected;
-
-        private Timer commandTimer;
+        //        public bool IsConnected => _client.Connected;
 
         public IntifaceControl()
         {
             InitializeComponent();
-            _log = LogManager.GetCurrentClassLogger();
             DeviceListBox.ItemsSource = DevicesList;
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Tls | SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls12;
-            _connectTask = new Task(async () => await ConnectTask());
-            _connectTask.Start();
-            commandTimer = new Timer {Interval = 50, AutoReset = true};
-            //commandTimer.Elapsed += OnVibrationTimer;
+            _autoConnect.IsChecked = VAMLaunchProperties.Default.ConnectOnStartup;
+            _remoteAddress.Text = VAMLaunchProperties.Default.WebsocketAddress;
+            _remoteAddress.TextChanged += (object o, TextChangedEventArgs e) =>
+            {
+                VAMLaunchProperties.Default.WebsocketAddress = _remoteAddress.Text;
+                VAMLaunchProperties.Default.Save();
+            };
+            _radioEmbedded.IsChecked = VAMLaunchProperties.Default.UseEmbedded;
+            _radioRemote.IsChecked = VAMLaunchProperties.Default.UseRemote;
+            OnRadioChange(null, null);
+            if (_autoConnect.IsChecked == true)
+            {
+                var addressArg = _radioEmbedded.IsChecked == false ? _remoteAddress.Text : null;
+                OnConnectClick(null, null);
+            }
+            _connectStatus.Text = "Not connected";
+            _scanningButton.IsEnabled = false;
         }
 
-        public async Task ConnectTask()
+        public void OnAutoConnectChange(object o, EventArgs e)
         {
-            Dispatcher.Invoke(() => { ConnectionStatus.Content = "Connecting"; });
-            IButtplugClientConnector connector;
-            //if (_useEmbeddedServer)
-            {
-                var embeddedConnector = new ButtplugEmbeddedConnector("VaMLaunch Embedded Server", 0, _deviceManager);
-                if (_deviceManager == null)
-                {
-                    _deviceManager = embeddedConnector.Server.DeviceManager;
-                }
-                connector = embeddedConnector;
-            }
+            VAMLaunchProperties.Default.ConnectOnStartup = _autoConnect.IsChecked == true;
+            VAMLaunchProperties.Default.Save();
+        }
 
-            var client = new ButtplugClient("VaMLaunch Client", connector);
-            while (!_quitting)
+        public void OnRadioChange(object o, EventArgs e)
+        {
+            if (_radioEmbedded == null || _radioRemote == null)
             {
-                try
+                return;
+            }
+            VAMLaunchProperties.Default.UseEmbedded = _radioEmbedded.IsChecked == true;
+            VAMLaunchProperties.Default.UseRemote = _radioRemote.IsChecked == true;
+            VAMLaunchProperties.Default.Save();
+            EmbeddedConnectionOptions.Visibility = _radioEmbedded.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            RemoteConnectionOptions.Visibility = _radioRemote.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public void OnConnectClick(object o, EventArgs e)
+        {
+            _connectButton.IsEnabled = false;
+            _radioEmbedded.IsEnabled = false;
+            _radioRemote.IsEnabled = false;
+            var address = _radioEmbedded.IsChecked == false ? _remoteAddress.Text : null;
+            _connectTask = new Task(async () => await ConnectTask(address));
+            _connectTask.Start();
+        }
+
+        public async Task ConnectTask(string aAddress)
+        {
+            var client = new ButtplugClient("Game Haptics Router");
+            client.DeviceAdded += OnDeviceAdded;
+            client.DeviceRemoved += OnDeviceRemoved;
+            client.ServerDisconnect += OnDisconnect;
+            client.ScanningFinished += OnScanningFinished;
+            try
+            {
+                if (aAddress == null)
                 {
-                    client.DeviceAdded += OnDeviceAdded;
-                    client.DeviceRemoved += OnDeviceRemoved;
-                    client.Log += OnLogMessage;
-                    client.ServerDisconnect += OnDisconnect;
-                    await client.ConnectAsync();
-                    await client.RequestLogAsync(ButtplugLogLevel.Debug);
-                    _client = client;
-                    await Dispatcher.Invoke(async () =>
+                    await client.ConnectAsync(new ButtplugEmbeddedConnectorOptions());
+                }
+                else
+                {
+                    var connector = new ButtplugWebsocketConnectorOptions(new Uri(aAddress));
+                    await client.ConnectAsync(connector);
+                }
+
+                _client = client;
+
+                await Dispatcher.Invoke(async () =>
+                {
+                    ConnectedHandler?.Invoke(this, new EventArgs());
+                    _connectStatus.Text = $"Connected{(aAddress == null ? ", restart GHR to disconnect." : " to Remote Buttplug Server")}";
+                    OnScanningClick(null, null);
+                    _scanningButton.IsEnabled = true;
+                    _connectButton.Visibility = Visibility.Collapsed;
+                    if (aAddress != null)
                     {
-                        ConnectedHandler?.Invoke(this, new EventArgs());
-                        ConnectionStatus.Content = "Connected";
-                        await StartScanning();
-                        _scanningButton.Visibility = Visibility.Visible;
+                        _disconnectButton.Visibility = Visibility.Visible;
+                    }
+                });
+            }
+            catch (ButtplugConnectorException ex)
+            {
+                Debug.WriteLine("Connection failed.");
+                // If the exception was thrown after connect, make sure we disconnect.
+                if (_client != null && _client.Connected)
+                {
+                    await _client.DisconnectAsync();
+                    _client = null;
+                }
+                Dispatcher.Invoke(() =>
+                {
+                    _connectStatus.Text = $"Connection failed, please try again.";
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Did something else fail? {ex})");
+                // If the exception was thrown after connect, make sure we disconnect.
+                if (_client != null && _client.Connected)
+                {
+                    await _client.DisconnectAsync();
+                    _client = null;
+                }
+                Dispatcher.Invoke(() =>
+                {
+                    _connectStatus.Text = $"Connection failed, please try again.";
+                });
+            }
+            finally
+            {
+                if (_client == null)
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        _connectButton.IsEnabled = true;
+                        _radioEmbedded.IsEnabled = true;
+                        _radioRemote.IsEnabled = true;
                     });
-                    break;
-                }
-                catch (ButtplugClientConnectorException)
-                {
-                    Debug.WriteLine("Retrying");
-                    // Just keep trying to connect.
-                    // If the exception was thrown after connect, make sure we disconnect.
-                    if (_client != null && _client.Connected)
-                    {
-                        await _client.DisconnectAsync();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Did something else fail? {ex})");
-                    // If the exception was thrown after connect, make sure we disconnect.
-                    if (_client != null && _client.Connected)
-                    {
-                        await _client.DisconnectAsync();
-                    }
                 }
             }
+        }
+
+        public void OnScanningFinished(object o, EventArgs e)
+        {
+            Dispatcher.Invoke(new Action(() => _scanningButton.Content = "Start Scanning"));
+        }
+
+        public void OnDisconnectClick(object o, EventArgs e)
+        {
+            _disconnectButton.IsEnabled = false;
+            new Task(async () => await Disconnect()).Start();
         }
 
         public async Task Disconnect()
         {
-            _quitting = true;
             await _client.DisconnectAsync();
+            Dispatcher.Invoke(() => {
+                OnDisconnect(null, null);
+            });
         }
 
-        public async Task StartScanning()
+        public Task StartScanning()
         {
-            await _client.StartScanningAsync();
-            _scanningButton.Content = "Stop Scanning";
+            return _client.StartScanningAsync();
         }
 
-        public async Task StopScanning()
+        public Task StopScanning()
         {
-            await _client.StopScanningAsync();
-            _scanningButton.Content = "Start Scanning";
+            return _client.StopScanningAsync();
         }
 
-        public async void OnScanningClick(object aObj, EventArgs aArgs)
+        public void OnScanningClick(object aObj, EventArgs aArgs)
         {
             _scanningButton.IsEnabled = false;
             // Dear god this is so jank. How is IsScanning not exposed on the Buttplug Client?
             if (_scanningButton.Content.ToString().Contains("Stop"))
             {
-                await StopScanning();
+                try
+                {
+                    _scanningButton.Content = "Start Scanning";
+                    Task.Run(async () => await StopScanning());
+                }
+                catch (ButtplugException e)
+                {
+                    // This will happen if scanning has already stopped. For now, ignore it.
+                }
             }
             else
             {
-                await StartScanning();
+                _scanningButton.Content = "Stop Scanning";
+                Task.Run(async () => await StartScanning());
             }
             _scanningButton.IsEnabled = true;
         }
 
         public void OnDisconnect(object aObj, EventArgs aArgs)
         {
-            _connectTask = new Task(async () => await ConnectTask());
-            _connectTask.Start();
-            _devices.Clear();
-            _client = null;
+            Dispatcher.Invoke(() =>
+            {
+                _connectButton.IsEnabled = true;
+                _connectButton.Visibility = Visibility.Visible;
+                _disconnectButton.Visibility = Visibility.Collapsed;
+                _connectStatus.Text = "Disconnected";
+                DevicesList.Clear();
+                _client.Dispose();
+                _client = null;
+            });
         }
 
-        public void OnDeviceAdded(object aObj, Buttplug.Client.DeviceAddedEventArgs aArgs)
+        public void OnDeviceAdded(object aObj, DeviceAddedEventArgs aArgs)
         {
-            Dispatcher.Invoke(() => { DevicesList.Add(new CheckedListItem(aArgs.Device)); });
+            Dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    DevicesList.Add(new CheckedListItem(aArgs.Device));
+                }
+                catch (Exception ex)
+                {
+                    // Ignore already added devices
+                }
+            });
         }
 
         public void OnDeviceRemoved(object aObj, DeviceRemovedEventArgs aArgs)
@@ -186,37 +273,11 @@ namespace VaMLaunchGUI
             });
         }
 
-        public void OnLogMessage(object aObj, LogEventArgs aArgs)
-        {
-            try
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    LogMessageHandler?.Invoke(this, aArgs.Message.LogMessage);
-                });
-            }
-            catch (TaskCanceledException)
-            {
-                // noop, we're shutting down.
-            }
-        }
-
-        public async Task FleshlightMovement(uint aSpeed, uint aPosition)
-        {
-            foreach (var deviceItem in DevicesList)
-            {
-                if (deviceItem.IsChecked && deviceItem.Device.AllowedMessages.ContainsKey(typeof(LinearCmd)))
-                {
-                    await deviceItem.Device.SendFleshlightLaunchFW12Cmd(aSpeed, aPosition);
-                }
-            }
-        }
-
         public async Task Vibrate(double aSpeed)
         {
             foreach (var deviceItem in DevicesList)
             {
-                if (deviceItem.IsChecked && deviceItem.Device.AllowedMessages.ContainsKey(typeof(VibrateCmd)))
+                if (deviceItem.IsChecked && deviceItem.Device.AllowedMessages.ContainsKey(ServerMessage.Types.MessageAttributeType.VibrateCmd))
                 {
                     await deviceItem.Device.SendVibrateCmd(aSpeed);
                 }
@@ -228,7 +289,7 @@ namespace VaMLaunchGUI
             foreach (var deviceItem in DevicesList)
             {
                 // If the duration is 0, just drop the message.
-                if (deviceItem.IsChecked && deviceItem.Device.AllowedMessages.ContainsKey(typeof(LinearCmd)) && aDuration > 0)
+                if (deviceItem.IsChecked && deviceItem.Device.AllowedMessages.ContainsKey(ServerMessage.Types.MessageAttributeType.LinearCmd) && aDuration > 0)
                 {
                     await deviceItem.Device.SendLinearCmd(aDuration, aPosition);
                 }
@@ -238,6 +299,16 @@ namespace VaMLaunchGUI
         public async Task StopVibration()
         {
             await Vibrate(0);
+        }
+
+        private void DisposeClient()
+        {
+            if (_client == null)
+            {
+                return;
+            }
+            _client.Dispose();
+            _client = null;
         }
     }
 }
