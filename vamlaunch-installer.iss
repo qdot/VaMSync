@@ -9,19 +9,19 @@
 #endif
 
 [Setup]
-AppName=Intiface Game Haptics Router
-AppVersion={#Version}
-AppPublisher=zengineer
-AppPublisherURL=www.github.com/zengineervam/vamlaunch
+AppName=VaMSync
+AppVersion=v2
+AppPublisher=Nonpolynomial LLC
+AppPublisherURL=www.github.com/intiface/vamlaunch
 AppId={{abb56014-a021-11e9-8957-ffa45f453cb2}
 // SetupIconFile=icons\intiface-ghr-logo-1.ico
 // WizardImageFile=icons\intiface-ghr-logo-1.bmp
 //WizardSmallImageFile=icons\intiface-ghr-logo-1.bmp
-DefaultDirName={pf}\VAMLaunch
+DefaultDirName={pf}\VaMSync
 // UninstallDisplayIcon=icons\intiface-ghr-logo-1.ico
 Compression=lzma2
 SolidCompression=yes
-OutputBaseFilename=vamlaunch-installer
+OutputBaseFilename=vamsync-installer
 OutputDir=.\installer
 LicenseFile=LICENSE
 
@@ -36,7 +36,7 @@ Source: "Readme.md"; DestDir: "{app}"; DestName: "Readme.txt"
 Source: "LICENSE"; DestDir: "{app}"; DestName: "License.txt"
 
 [Icons]
-Name: "{commonprograms}\VAMLaunch"; Filename: "{app}\VaMLaunchGUI.exe"
+Name: "{commonprograms}\VaMSync"; Filename: "{app}\VaMLaunchGUI.exe"
 
 // [Run]
 // Filename: "{app}\Readme.txt"; Description: "View the README file"; Flags: postinstall shellexec unchecked
