@@ -101,7 +101,7 @@ namespace VaMLaunchGUI
 
         public async Task ConnectTask(string aAddress)
         {
-            var client = new ButtplugClient("Game Haptics Router");
+            var client = new ButtplugClient("VaMSync");
             client.DeviceAdded += OnDeviceAdded;
             client.DeviceRemoved += OnDeviceRemoved;
             client.ServerDisconnect += OnDisconnect;
@@ -123,7 +123,7 @@ namespace VaMLaunchGUI
                 await Dispatcher.Invoke(async () =>
                 {
                     ConnectedHandler?.Invoke(this, new EventArgs());
-                    _connectStatus.Text = $"Connected{(aAddress == null ? ", restart GHR to disconnect." : " to Remote Buttplug Server")}";
+                    _connectStatus.Text = $"Connected{(aAddress == null ? ", restart VaMSync to disconnect." : " to Remote Buttplug Server")}";
                     OnScanningClick(null, null);
                     _scanningButton.IsEnabled = true;
                     _connectButton.Visibility = Visibility.Collapsed;
