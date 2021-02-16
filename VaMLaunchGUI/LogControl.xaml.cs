@@ -10,6 +10,7 @@ using Microsoft.Win32;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
+using Buttplug;
 
 namespace VaMLaunchGUI
 {
@@ -86,6 +87,9 @@ namespace VaMLaunchGUI
 
             //LogLevelComboBox.SelectionChanged += LogLevelSelectionChangedHandler;
             LogListBox.ItemsSource = _logs;
+
+            ButtplugFFILog.StartLogHandler(ButtplugLogLevel.Info, false);
+            Buttplug.ButtplugFFILog.LogMessage += (obj, msg) => _logs.Add(msg.Trim());
         }
 
         public void AddLogMessage(string aMsg)
