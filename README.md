@@ -1,12 +1,14 @@
-# VAM Launch v1.0
-## VAM Plugin that adds support for Launch devices (and others through Buttplug.io)
+# VAM Launch v2.0
 
+## VAM Plugin that adds support for stroking/vibrating devices thru Buttplug.io
 
-[![GitHub release](https://img.shields.io/github/release/ZengineerVAM/VAMLaunch.svg)](https://github.com/ZengineerVAM/VAMLaunch/releases/tag/v1.0)
-![](https://img.shields.io/github/downloads/ZengineerVAM/VAMLaunch/total.svg)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/zengineering)
+Download Latest: [v2.0](https://github.com/intiface/VaMSync/releases/)
 
-Download Latest: [v1.0](https://github.com/ZengineerVAM/VAMLaunch/releases/download/v1.0/VAMLaunch.v1.0.zip)
+### Version 2.0 Features
+
+- Change name to VaMSync (as the launch is no longer a product)
+- Update to Buttplug v1.x, including support for the [Kiiroo Keon](https://kiiroo.keon.buttplug.io) and [The Handy](https://thehandy.buttplug.io).
+- Add capabilities to connect VaMSync to Intiface Desktop, meaning that even if this program isn't updated, it should still be able to connect to new toys.
 
 ### Version 1.0 Features
 
