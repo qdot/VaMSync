@@ -56,6 +56,15 @@ namespace VaMLaunchGUI
                     ConnectionStatus.Content = "Connected to VaM";
                 }
 
+                if (e.Speed <= 20)
+                {
+                    await _intifaceTab.StopVibration();
+                }
+                else
+                {
+                    await _intifaceTab.Vibrate((double)(e.Position / 100.0 * (e.Speed / 100.0)));
+                }
+                
                 await _intifaceTab.Linear((uint)(e.Duration * 1000), (double)(e.Position / 100.0));
             });
         }
