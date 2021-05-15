@@ -120,7 +120,7 @@ namespace VaMLaunchGUI
 
                 _client = client;
 
-                await Dispatcher.Invoke(async () =>
+                Dispatcher.Invoke(() =>
                 {
                     ConnectedHandler?.Invoke(this, new EventArgs());
                     _connectStatus.Text = $"Connected{(aAddress == null ? ", restart VaMSync to disconnect." : " to Remote Buttplug Server")}";

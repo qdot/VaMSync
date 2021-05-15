@@ -88,7 +88,7 @@ namespace VaMLaunchGUI
             //LogLevelComboBox.SelectionChanged += LogLevelSelectionChangedHandler;
             LogListBox.ItemsSource = _logs;
 
-            ButtplugFFILog.StartLogHandler(ButtplugLogLevel.Info, false);
+            ButtplugFFILog.SetLogOptions(ButtplugLogLevel.Info, false);
             Buttplug.ButtplugFFILog.LogMessage += (obj, msg) => _logs.Add(msg.Trim());
         }
 
