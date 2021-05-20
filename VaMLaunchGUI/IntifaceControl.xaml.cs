@@ -278,14 +278,23 @@ namespace VaMLaunchGUI
         public async Task Vibrate(int device, int motor, double aSpeed)
         {
             var devices = DevicesList;
+            //Console.WriteLine("---------");
+            //Console.WriteLine($"Vibrate {device} {motor} {aSpeed}");
             if (device != Command.DEVICE_ALL) {
-                if(DevicesList.Count >= device)
+                var singleDevice = DevicesList.FirstOrDefault(d => d.Device.Index == device - 1);
+                if(singleDevice != null)
                 {
-                    devices = new ObservableCollection<CheckedListItem> { DevicesList[device - 1] };
+                    //Console.WriteLine($"found device {device}");
+                    devices = new ObservableCollection<CheckedListItem> { singleDevice };
+                }
+                else
+                {
+                    //Console.WriteLine($"no found device {device}");
+                    devices = new ObservableCollection<CheckedListItem>();
                 }
             }
 
-            foreach (var deviceItem in DevicesList)
+            foreach (var deviceItem in devices)
             {
                 if(!deviceItem.IsChecked)
                 {
@@ -313,14 +322,23 @@ namespace VaMLaunchGUI
         public async Task Linear(int device, int motor, uint aDuration, double aPosition)
         {
             var devices = DevicesList;
+            //Console.WriteLine("---------");
+            //Console.WriteLine($"Linear {device} {motor} {aDuration} {aPosition}");
             if (device != Command.DEVICE_ALL) {
-                if(DevicesList.Count >= device)
+                var singleDevice = DevicesList.FirstOrDefault(d => d.Device.Index == device - 1);
+                if(singleDevice != null)
                 {
-                    devices = new ObservableCollection<CheckedListItem> { DevicesList[device - 1] };
+                    //Console.WriteLine($"found device {device}");
+                    devices = new ObservableCollection<CheckedListItem> { singleDevice };
+                }
+                else
+                {
+                    //Console.WriteLine($"no found device {device}");
+                    devices = new ObservableCollection<CheckedListItem>();
                 }
             }
 
-            foreach (var deviceItem in DevicesList)
+            foreach (var deviceItem in devices)
             {
                 if(!deviceItem.IsChecked)
                 {

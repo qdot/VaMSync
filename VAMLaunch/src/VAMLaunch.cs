@@ -34,14 +34,16 @@ namespace VAMLaunchPlugin
         {
             "Oscillate",
             "Pattern",
-            "Zone"
+            "Zone",
+            "Manual"
         };
 
         private List<IMotionSource> _motionSources = new List<IMotionSource>
         {
             new OscillateSource(),
             new PatternSource(),
-            new ZoneSource()
+            new ZoneSource(),
+            new ManualSource()
         };
         
         public override void Init()
@@ -234,7 +236,23 @@ namespace VAMLaunchPlugin
             }
         }
 
-        
+        public void SetVibration(int device, int motor, float percent)
+        {
+            if(_network == null)
+            {
+                return;
+            }
+
+            if(_pauseLaunchMessages.val)
+            {
+                return;
+            }
+
+            percent = Mathf.Clamp01(percent);
+
+            _network.SendVibrateCmd(device, motor, percent * 100);
+        }
+
         private void SendLaunchPosition(byte pos, byte speed)
         {
             SetSimulatorTarget(pos, speed);
@@ -250,8 +268,8 @@ namespace VAMLaunchPlugin
                 float duration = LaunchUtils.PredictMoveDuration(dist, speed);
 
                 _network.SendLinearCmd(duration, pos);
-                _network.SendVibrateCmd(pos);
-                    
+                _network.SendVibrateCmd((float)(pos * (speed / 100.0)));
+
                 _lastSentLaunchPos = pos;
             }
         }

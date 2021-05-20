@@ -99,6 +99,7 @@ namespace VAMLaunch
                     {
                         CommandUpdate?.Invoke(this, new CommandEventArgs { Command = cmd });
                     }
+                    _latestCommands.Clear();
                     _hasNewCommands = false;
                 }
                 
