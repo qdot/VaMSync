@@ -235,7 +235,6 @@ namespace VAMLaunchPlugin
         }
 
         
-        private static byte[] _launchData = new byte[6];
         private void SendLaunchPosition(byte pos, byte speed)
         {
             SetSimulatorTarget(pos, speed);
@@ -247,22 +246,12 @@ namespace VAMLaunchPlugin
 
             if (!_pauseLaunchMessages.val)
             {
-                _launchData[0] = pos;
-                _launchData[1] = speed;
-
                 float dist = Mathf.Abs(pos - _lastSentLaunchPos);
                 float duration = LaunchUtils.PredictMoveDuration(dist, speed);
-                    
-                var durationData = BitConverter.GetBytes(duration);
-                _launchData[2] = durationData[0];
-                _launchData[3] = durationData[1];
-                _launchData[4] = durationData[2];
-                _launchData[5] = durationData[3];
-                
-                //SuperController.LogMessage(string.Format("Sending: P:{0}, S:{1}, D:{2}", pos, speed, duration));
-                
-                _network.Send(_launchData, _launchData.Length);
 
+                _network.SendLinearCmd(duration, pos);
+                _network.SendVibrateCmd(pos);
+                    
                 _lastSentLaunchPos = pos;
             }
         }

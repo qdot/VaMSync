@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Buttplug;
+using VAMLaunch;
 
 namespace VaMLaunchGUI
 {
@@ -273,32 +275,79 @@ namespace VaMLaunchGUI
             });
         }
 
-        public async Task Vibrate(double aSpeed)
+        public async Task Vibrate(int device, int motor, double aSpeed)
         {
+            var devices = DevicesList;
+            if (device != Command.DEVICE_ALL) {
+                if(DevicesList.Count >= device)
+                {
+                    devices = new ObservableCollection<CheckedListItem> { DevicesList[device - 1] };
+                }
+            }
+
             foreach (var deviceItem in DevicesList)
             {
-                if (deviceItem.IsChecked && deviceItem.Device.AllowedMessages.ContainsKey(ServerMessage.Types.MessageAttributeType.VibrateCmd))
+                if(!deviceItem.IsChecked)
                 {
-                    await deviceItem.Device.SendVibrateCmd(aSpeed);
+                    continue;
+                }
+
+                if(deviceItem.Device.AllowedMessages.ContainsKey(ServerMessage.Types.MessageAttributeType.VibrateCmd))
+                {
+                    if(motor == Command.MOTOR_ALL)
+                    {
+                        await deviceItem.Device.SendVibrateCmd(aSpeed);
+                    }
+                    else
+                    {
+                        await deviceItem.Device.SendVibrateCmd(new Dictionary<uint, double>()
+                        {
+                            { (uint)motor-1, aSpeed }
+                        });
+                    }
+
                 }
             }
         }
 
-        public async Task Linear(uint aDuration, double aPosition)
+        public async Task Linear(int device, int motor, uint aDuration, double aPosition)
         {
+            var devices = DevicesList;
+            if (device != Command.DEVICE_ALL) {
+                if(DevicesList.Count >= device)
+                {
+                    devices = new ObservableCollection<CheckedListItem> { DevicesList[device - 1] };
+                }
+            }
+
             foreach (var deviceItem in DevicesList)
             {
-                // If the duration is 0, just drop the message.
-                if (deviceItem.IsChecked && deviceItem.Device.AllowedMessages.ContainsKey(ServerMessage.Types.MessageAttributeType.LinearCmd) && aDuration > 0)
+                if(!deviceItem.IsChecked)
                 {
-                    await deviceItem.Device.SendLinearCmd(aDuration, aPosition);
+                    continue;
+                }
+
+                if(deviceItem.Device.AllowedMessages.ContainsKey(ServerMessage.Types.MessageAttributeType.LinearCmd) && aDuration > 0)
+                {
+                    if(motor == Command.MOTOR_ALL)
+                    {
+                        await deviceItem.Device.SendLinearCmd(aDuration, aPosition);
+                    }
+                    else
+                    {
+                        await deviceItem.Device.SendLinearCmd(new Dictionary<uint, (uint, double)>()
+                        {
+                            { (uint)motor-1, (aDuration, aPosition) }
+                        });
+                    }
+
                 }
             }
         }
 
         public async Task StopVibration()
         {
-            await Vibrate(0);
+            await Vibrate(Command.DEVICE_ALL, Command.MOTOR_ALL, 0);
         }
 
         private void DisposeClient()
