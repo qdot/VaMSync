@@ -1,36 +1,18 @@
-# VAM Launch v2.0
+# VAM Sync
 
-## VAM Plugin that adds support for stroking/vibrating devices thru Buttplug.io
+**VAM Plugin that adds support for stroking/vibrating devices thru Buttplug.io**
 
-Download Latest: [v2.0](https://github.com/intiface/VaMSync/releases/)
+Download Latest: [v3](https://github.com/intiface/VaMSync/releases/)
 
-### Version 2.0 Features
+## IMPORTANT SUPPORT NOTE
 
-- Change name to VaMSync (as the launch is no longer a product)
-- Update to Buttplug v1.x, including support for the [Kiiroo Keon](https://kiiroo.keon.buttplug.io) and [The Handy](https://thehandy.buttplug.io).
-- Add capabilities to connect VaMSync to Intiface Desktop, meaning that even if this program isn't updated, it should still be able to connect to new toys.
+The current maintainer of VaMSync is also the maintainer of [Buttplug.io](https://buttplug.io), and does not use VaM. While filing of issues is appeciated, few if any bugs on the VaM side will be able to be addressed by the buttplug.io team.
 
-### Version 1.0 Features
+If you are interested in helping with VaM-side issues, please comment either in the issues or the discussions area!
 
-A HUGE thanks to [qdot](https://github.com/qdot) for collaborating with me to bring you:
-#### • <a href="https://buttplug.io/"><img src="https://avatars2.githubusercontent.com/u/39504077?s=200&v=4" width="32" height="32" /></a> Buttplug.io support
-VAMLaunch now supports any device that is supported by Buttplug that accepts linear commands.
-> Launch, Kiiroo Onyx 1/2/2.1, Titan 1, RealTouch
+## VAM Modes
 
-#### • New LaunchServer GUI
-[qdot](https://github.com/qdot) has implemented a fantastic GUI interface to
-setup connections with all your devices.
-No more ugly command line server!
-
-<img src="Docs/Images/VAMLaunchServerGUI.PNG" width="400"/>
-
-#### • New Installer
-The VAMLaunch now comes with an easy to use installer.
-
-#### • New Motion Sources
-There are new (and more reliable) ways to create device motion from within VAM, it really is possible now to achieve near 1:1 sync:
-
-###### Oscillate Mode
+### Oscillate Mode
 
 [Instructions](Docs/OscilateMode.md)
 
@@ -38,7 +20,7 @@ Oscillate mode simply tells the device to move up and down at a certain speed, w
 
 <img src="Docs/Images/osc_mode.gif" width="600"/>
 
-##### AnimationPattern Mode
+### AnimationPattern Mode
 
 [Instructions](Docs/AnimationPatternMode.md)
 
@@ -46,7 +28,7 @@ AnimationPattern mode works like oscillation mode but in reverse. Instead of an 
 
 <img src="Docs/Images/pattern_mode.gif" width="600"/>
 
-#### • Influence Zone Mode (Experimental)
+### • Influence Zone Mode (Experimental)
 
 [Instructions](Docs/InfluenceZoneMode.md)
 
@@ -54,14 +36,14 @@ Influence Zone Mode: The original mode is still here with some additional qualit
 
 <img src="Docs/Images/zone_mode.gif" width="600"/>
 
-#### • New trigger actions
+### • New trigger actions
 You can now make it easier for users of your scene to control their device through three new triggers:
 - startLaunch
 - stopLaunch
 - toggleLaunch
 
 
-### Installation
+## Installation
 
 Inside the .zip you will find two things:
 
@@ -76,7 +58,7 @@ Once this is installed, copy the VAMLaunch plugin folder to this location:
 
 YOUR_VAM_LOCATION/Saves/Scripts
 
-### Making sure your Launch device is ready
+## Making sure your Launch device is ready
 
 I highly suggest following the instructions [here](https://github.com/FredTungsten/ScriptPlayer/wiki/Installation)
 and testing your device with ScriptPlayer first to confirm you have everything
@@ -85,21 +67,7 @@ set up correctly.
 If your device can connect to ScriptPlayer then it is highly likely it will work
 with this plugin.
 
-### Connect Your Device
-
-Before running VAM you will want to connect your device to the VAMLaunch server.
-
-Open the VAMLaunch server application (Which will now be located where you installed it)
-
-<img src="Docs/Images/devices.PNG" width="300"/>
-
-The application should start searching immediately when it opens, in the case of the Launch device make sure it is on with the blue light flashing.
-Once connected the blue light on your device should become solid and you will be able to view your device in the list.
-Simply tick the device to enable it.
-
-You are now ready to start using VAMLaunch within VAM!
-
-### Starting The Plugin
+## Starting The Plugin
 
 VAMLaunch can be loaded onto any Atom in VAM. Simply select an Atom (In this case we have created a sphere Atom)
 
@@ -109,7 +77,7 @@ Go to the Plugins tab and press "Add Plugin", select the ADD_ME.cslist file foun
 
 <img src="Docs/Images/loadplugin.PNG" width="600"/>
 
-### Plugin Menu
+## Plugin Menu
 
 To open the plugin menu press "Open Custom UI" next to the VAMLaunch plugin in the list.
 
