@@ -268,7 +268,15 @@ namespace VAMLaunchPlugin
                 float duration = LaunchUtils.PredictMoveDuration(dist, speed);
 
                 _network.SendLinearCmd(duration, pos);
-                _network.SendVibrateCmd((float)(pos * (speed / 100.0)));
+
+                if(speed <= 20)
+                {
+                    _network.SendVibrateCmd(0);
+                }
+                else
+                {
+                    _network.SendVibrateCmd((float)(pos * (speed / 100.0)));
+                }
 
                 _lastSentLaunchPos = pos;
             }
