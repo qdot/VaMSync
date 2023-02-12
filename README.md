@@ -1,14 +1,12 @@
-# VAM Sync
+# VAM Sync - ABANDONED
+
+This project has been abandoned. I keep getting support questions for it that I cannot answer, because I have no interest in VaM, and I just took this over to try and make up for the original engineer disappearing. If someone from the VaM community wants to take over the project, please feel free to fork the project and continue it.
+
+## Intro
 
 **VAM Plugin that adds support for stroking/vibrating devices thru Buttplug.io**
 
 Download Latest: [v3](https://github.com/intiface/VaMSync/releases/)
-
-## IMPORTANT SUPPORT NOTE
-
-The current maintainer of VaMSync is also the maintainer of [Buttplug.io](https://buttplug.io), and does not use VaM. While filing of issues is appeciated, few if any bugs on the VaM side will be able to be addressed by the buttplug.io team.
-
-If you are interested in helping with VaM-side issues, please comment either in the issues or the discussions area!
 
 ## VAM Modes
 
