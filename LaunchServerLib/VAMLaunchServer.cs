@@ -1,22 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace VAMLaunch
 {
-    public class PositionUpdateEventArgs : EventArgs
+    public class CommandEventArgs : EventArgs
     {
-        // 0-99, in Launch FW 1.2 message units
-        public uint Position;
-        // 0-99, in Launch FW 1.2 message units
-        public uint Speed;
-        // time in decimal seconds
-        public float Duration;
+        public Command Command;
     }
 
 
     public class VAMLaunchServer
     {
-        public EventHandler<PositionUpdateEventArgs> PositionUpdate;
+        public EventHandler<CommandEventArgs> CommandUpdate;
         private const string SERVER_IP = "127.0.0.1";
         private const int SERVER_LISTEN_PORT = 15601;
         private const int SERVER_SEND_PORT = 15600;
@@ -32,10 +28,7 @@ namespace VAMLaunch
 
         private bool _running;
 
-        private byte _latestLaunchPos;
-        private byte _latestLaunchSpeed;
-        private float _latestLaunchDuration;
-        private bool _hasNewLaunchSnapshot;
+        private bool _hasNewCommands;
         private DateTime _timeOfLastLaunchUpdate;
 
         public void Run()
@@ -98,30 +91,101 @@ namespace VAMLaunch
             TimeSpan timeSinceLastUpdate = now - _timeOfLastLaunchUpdate;
             if (timeSinceLastUpdate.TotalSeconds > LAUNCH_UPDATE_INTERVAL)
             {
-                if (_hasNewLaunchSnapshot)
+                if (_hasNewCommands)
                 {
-                    PositionUpdate?.Invoke(this, new PositionUpdateEventArgs { Position = _latestLaunchPos, Speed = _latestLaunchSpeed, Duration = _latestLaunchDuration });
-                    _hasNewLaunchSnapshot = false;
+                    foreach(var cmd in _latestCommands.Values)
+                    {
+                        CommandUpdate?.Invoke(this, new CommandEventArgs { Command = cmd });
+                    }
+                    _latestCommands.Clear();
+                    _hasNewCommands = false;
                 }
                 
                 _timeOfLastLaunchUpdate = now;
             }
         }
 
+        private Dictionary<(int, int, int), Command> _latestCommands = new Dictionary<(int, int, int), Command>();
         private void ProcessNetworkMessages()
         {
-            byte[] msg = _network.GetNextMessage();
-            if (msg != null && msg.Length == 6)
+            var cmd = Command.Parse(_network.GetNextMessage());
+            if(cmd != null)
             {
-                _latestLaunchPos = msg[0];
-                _latestLaunchSpeed = msg[1];
-                _latestLaunchDuration = BitConverter.ToSingle(msg, 2);
-
-//                Console.WriteLine("Receiving: P:{0}, S:{1}, D:{2}", _latestLaunchPos, _latestLaunchSpeed,
-//                    _latestLaunchDuration);
-                
-                _hasNewLaunchSnapshot = true;
+                _latestCommands[(cmd.Type, cmd.Device, cmd.Motor)] = cmd;
+                _hasNewCommands = true;
             }
         }
+    }
+
+    public class Command
+    {
+        public const byte LINEAR_CMD = 0;
+        public const byte VIBRATE_CMD = 1;
+        public const byte ROTATE_CMD = 2;
+
+        public const byte DEVICE_ALL = 0;
+        public const byte MOTOR_ALL = 0;
+
+        public int Type;
+        public int Device;
+        public int Motor;
+        public List<float> Params;
+
+        public Command()
+        {
+            Type = -1;
+            Device = DEVICE_ALL;
+            Motor = MOTOR_ALL;
+            Params = new List<float>();
+        }
+
+        public static Command Parse(byte[] data)
+        {
+            if(data == null || data.Length < 4)
+            {
+                return null;
+            }
+
+            var cmd = new Command()
+            {
+                Device = data[2],
+                Motor = data[3]
+            };
+
+            switch(data[1])
+            {
+                case LINEAR_CMD:
+                    if(data.Length < 12)
+                    {
+                        return null;
+                    }
+                    cmd.Type = LINEAR_CMD;
+                    cmd.Params.Add(BitConverter.ToSingle(data, 4)); // duration
+                    cmd.Params.Add(BitConverter.ToSingle(data, 8)); // position
+                    break;
+                case VIBRATE_CMD:
+                    if(data.Length < 8)
+                    {
+                        return null;
+                    }
+                    cmd.Type = VIBRATE_CMD;
+                    cmd.Params.Add(BitConverter.ToSingle(data, 4)); // speed
+                    break;
+                case ROTATE_CMD:
+                    if(data.Length < 9)
+                    {
+                        return null;
+                    }
+                    cmd.Type = ROTATE_CMD;
+                    cmd.Params.Add(BitConverter.ToSingle(data, 4)); // speed
+                    cmd.Params.Add((float)data[8]); // clockwise
+                    break;
+                default:
+                    return null;
+            }
+
+            return cmd;
+        }
+
     }
 }

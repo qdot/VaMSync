@@ -34,14 +34,16 @@ namespace VAMLaunchPlugin
         {
             "Oscillate",
             "Pattern",
-            "Zone"
+            "Zone",
+            "Manual"
         };
 
         private List<IMotionSource> _motionSources = new List<IMotionSource>
         {
             new OscillateSource(),
             new PatternSource(),
-            new ZoneSource()
+            new ZoneSource(),
+            new ManualSource()
         };
         
         public override void Init()
@@ -234,8 +236,23 @@ namespace VAMLaunchPlugin
             }
         }
 
-        
-        private static byte[] _launchData = new byte[6];
+        public void SetVibration(int device, int motor, float percent)
+        {
+            if(_network == null)
+            {
+                return;
+            }
+
+            if(_pauseLaunchMessages.val)
+            {
+                return;
+            }
+
+            percent = Mathf.Clamp01(percent);
+
+            _network.SendVibrateCmd(device, motor, percent * 100);
+        }
+
         private void SendLaunchPosition(byte pos, byte speed)
         {
             SetSimulatorTarget(pos, speed);
@@ -247,21 +264,19 @@ namespace VAMLaunchPlugin
 
             if (!_pauseLaunchMessages.val)
             {
-                _launchData[0] = pos;
-                _launchData[1] = speed;
-
                 float dist = Mathf.Abs(pos - _lastSentLaunchPos);
                 float duration = LaunchUtils.PredictMoveDuration(dist, speed);
-                    
-                var durationData = BitConverter.GetBytes(duration);
-                _launchData[2] = durationData[0];
-                _launchData[3] = durationData[1];
-                _launchData[4] = durationData[2];
-                _launchData[5] = durationData[3];
-                
-                //SuperController.LogMessage(string.Format("Sending: P:{0}, S:{1}, D:{2}", pos, speed, duration));
-                
-                _network.Send(_launchData, _launchData.Length);
+
+                _network.SendLinearCmd(duration, pos);
+
+                if(speed <= 20)
+                {
+                    _network.SendVibrateCmd(0);
+                }
+                else
+                {
+                    _network.SendVibrateCmd((float)(pos * (speed / 100.0)));
+                }
 
                 _lastSentLaunchPos = pos;
             }

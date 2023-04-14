@@ -44,28 +44,30 @@ namespace VaMLaunchGUI
             _serverTask = new Task (() => server.UpdateThread());
             _serverTask.Start();
             // This is an event handler that will be executed on an outside thread, so remember to use dispatcher.
-            server.PositionUpdate += OnPositionUpdate;
+            server.CommandUpdate += OnCommandEvent;
         }
 
-        protected void OnPositionUpdate(object aObj, PositionUpdateEventArgs e)
+        protected void OnCommandEvent(object aObj, CommandEventArgs e)
         {
             Dispatcher.Invoke(async () =>
             {
-                if (!_positionReceived)
-                {
-                    ConnectionStatus.Content = "Connected to VaM";
-                }
+            if (!_positionReceived)
+            {
+                ConnectionStatus.Content = "Connected to VaM";
+            }
 
-                if (e.Speed <= 20)
-                {
-                    await _intifaceTab.StopVibration();
+            switch (e.Command.Type)
+            {
+                case Command.LINEAR_CMD:
+                    await _intifaceTab.Linear(e.Command.Device, e.Command.Motor, (uint)(e.Command.Params[0] * 1000), e.Command.Params[1] / 100.0);
+                    break;
+                case Command.VIBRATE_CMD:
+                    await _intifaceTab.Vibrate(e.Command.Device, e.Command.Motor, e.Command.Params[0] / 100.0);
+                    break;
+                case Command.ROTATE_CMD:
+                    // TODO: implement
+                    break;
                 }
-                else
-                {
-                    await _intifaceTab.Vibrate((double)(e.Position / 100.0 * (e.Speed / 100.0)));
-                }
-                
-                await _intifaceTab.Linear((uint)(e.Duration * 1000), (double)(e.Position / 100.0));
             });
         }
     }

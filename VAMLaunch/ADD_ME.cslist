@@ -5,3 +5,4 @@ src/MotionSources/IMotionSource.cs
 src/MotionSources/ZoneSource.cs
 src/MotionSources/OscillateSource.cs
 src/MotionSources/PatternSource.cs
+src/MotionSources/ManualSource.cs

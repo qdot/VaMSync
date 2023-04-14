@@ -39,8 +39,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Buttplug, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Buttplug.2.0.2\lib\net47\Buttplug.dll</HintPath>
+    <Reference Include="Buttplug, Version=2.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Buttplug.2.0.3\lib\net47\Buttplug.dll</HintPath>
     </Reference>
     <Reference Include="Google.Protobuf, Version=3.17.0.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
       <HintPath>..\packages\Google.Protobuf.3.17.0\lib\net45\Google.Protobuf.dll</HintPath>
